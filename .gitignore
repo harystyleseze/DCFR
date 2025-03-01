@@ -12,3 +12,7 @@ node_modules
 
 # Cursor rules
 .cursorrules    
+
+.next
+*.tsbuildinfo
+next-env.d.ts
