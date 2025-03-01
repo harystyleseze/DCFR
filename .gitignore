@@ -1,18 +1,22 @@
 .env*               
 .cursorrules
 
-# Next.js
-.next
-
-# Node modules
-node_modules
-
-# Environment variables
-.env
-
-# Cursor rules
-.cursorrules    
 
 .next
 *.tsbuildinfo
 next-env.d.ts
+
+/node_modules
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
