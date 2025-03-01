@@ -1,0 +1,14 @@
+.env*               
+.cursorrules
+
+# Next.js
+.next
+
+# Node modules
+node_modules
+
+# Environment variables
+.env
+
+# Cursor rules
+.cursorrules    
