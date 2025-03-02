@@ -135,4 +135,14 @@ export class AutoDriveService {
       throw new Error(`Error uploading folder: ${error.message}`);
     }
   }
+
+  async downloadFile(cid: string) {
+    try {
+      const stream = await this.api.downloadFile(cid);
+      return stream;
+    } catch (error: any) {
+      console.error("Error downloading file:", error);
+      throw new Error(`Error downloading file: ${error.message}`);
+    }
+  }
 }

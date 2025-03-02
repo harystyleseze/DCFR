@@ -51,6 +51,12 @@ export default function Navbar() {
             >
               Delete
             </Link>
+            <Link
+              href="/proposals/share"
+              className="text-gray-700 dark:text-gray-200 hover:text-primary dark:hover:text-primary"
+            >
+              Share
+            </Link>
           </nav>
 
           <div className="hidden md:flex items-center space-x-2">
@@ -102,6 +108,13 @@ export default function Navbar() {
               onClick={() => setIsMenuOpen(false)}
             >
               Delete
+            </Link>
+            <Link
+              href="/proposals/share"
+              className="block text-gray-700 dark:text-gray-200 hover:text-primary dark:hover:text-primary"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Share
             </Link>
             <div className="flex items-center space-x-2">
               <FaucetButton />

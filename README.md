@@ -1,102 +1,147 @@
 # **Decentralized Collaborative File Repository (DCFR)**
 
-## **Summary**
+## **User-Focused Summary**
 
-The **Decentralized Collaborative File Repository (DCFR)** is a decentralized platform designed for managing files, where file-related actions such as uploading, deleting, and sharing files are governed by a DAO (Decentralized Autonomous Organization). This DAO system empowers members to propose and vote on file actions, ensuring democratic control over how files are handled within the repository.
+DCFR is a decentralized file management platform that puts control in the hands of its community through DAO governance. Every file operation - from uploads to deletions - is decided by member voting, ensuring transparent and democratic file management.
 
-Core features:
-
-- **File Uploading**: DAO members can propose file uploads, with voting taking place to decide whether the file should be added to the repository.
-- **File Deletion**: Proposals can be made to delete files, which will be carried out if the majority of DAO members vote in favor.
-- **File Sharing**: Proposals to grant file access to other members can be made and voted upon.
-- **DAO Governance**: All actions are governed by DAO members, ensuring democratic control and transparency in decision-making.
+**Key Features:**
+- Upload files through community-approved proposals
+- Democratic file deletion process
+- Controlled file sharing with granular access management
+- Real-time proposal tracking and voting
+- Secure, decentralized storage using AutoDrive
+- Member management through DAO governance
 
 ## **Investor Pitch**
 
-In today's world, where data privacy, censorship resistance, and secure access control are critical, centralized file storage solutions often fail to provide the necessary levels of security, transparency, and control. **DCFR** solves this by using blockchain technology and DAO governance to manage file storage and access.
+### **Problem Statement**
+Traditional file storage solutions suffer from:
+- Centralized control leading to single points of failure
+- Lack of transparency in file management decisions
+- Limited user control over data governance
+- Vulnerability to censorship and unauthorized access
 
-### **Problem Solved**:
+### **Solution**
+DCFR revolutionizes file management by:
+- Implementing DAO-based governance for all file operations
+- Ensuring transparent decision-making through blockchain
+- Providing decentralized storage with AutoDrive
+- Enabling community-driven access control
 
-- **Data Privacy**: Users have control over who accesses their files, as DAO governance ensures decisions are made collectively.
-- **Censorship Resistance**: The decentralized nature of the system ensures that no single entity can control or manipulate the file storage.
-- **Secure Access Control**: File access is granted based on DAO decisions, ensuring that only approved members can access sensitive data.
+### **Market Fit**
+DCFR serves:
+1. **DAOs & Web3 Organizations**
+   - Secure document management
+   - Transparent governance
+   - Decentralized collaboration
 
-### **Market Fit**:
+2. **Privacy-Focused Enterprises**
+   - Controlled file access
+   - Audit trail of decisions
+   - Democratic file management
 
-- **Decentralized Communities**: For communities that need secure, private file storage with governance over access.
-- **Organizations**: Teams that need to securely store documents, share them, and ensure that file management is governed democratically.
-- **Individuals**: Anyone who values privacy and control over their personal data.
-
-### **Why It Matters**:
-
-As the world becomes more decentralized, tools that enable secure, transparent, and censorship-resistant file management will become essential. DCFR offers a novel approach to file governance and storage, ensuring security while promoting decentralization.
+3. **Decentralized Communities**
+   - Collective decision-making
+   - Shared resource management
+   - Transparent operations
 
 ## **Development Deepdive**
 
-### **Smart Contract Functions**:
+### **Architecture Overview**
+The system consists of two main components:
 
-The core of the DCFR project is the smart contract governing the file management. Key functions include:
+1. **Smart Contracts (Solidity)**
+   - FileDAO.sol: Core governance and proposal management
+   - Faucet.sol: Token distribution for testing
 
-1. **Upload**: DAO members can propose the upload of a new file to the decentralized repository. Proposals must be voted on, and if the majority approves, the file is added to the system.
-2. **Delete**: Proposals to delete a file from the repository can be made, and if voted upon favorably, the file is removed.
-3. **Share**: Access to a file can be granted to a member based on DAO decisions, allowing for controlled sharing of files among members.
-4. **Proposal Voting**: Members of the DAO vote on various proposals (upload, delete, share), and the proposal passes only if it achieves a majority vote (51% or more).
+2. **Frontend/Backend (Next.js)**
+   - React components for UI
+   - API routes for contract interaction
+   - AutoDrive integration for storage
 
-### **Frontend**:
+### **Key Contract Interactions**
 
-The frontend, built with **Next.js**, connects to the smart contract using **Ethers.js** to allow users to interact with the decentralized system. Members can view and vote on proposals, upload files, delete files, and manage file access from the UI. The frontend is also built with a modern, responsive UI, utilizing **TailwindCSS** for styling.
+1. **Proposal Creation**
+```solidity
+function propose(
+    ProposalType proposalType,
+    string memory cid,
+    string memory fileName,
+    uint256 fileSize,
+    uint256 votingPeriod
+) public returns (uint256)
+```
+- Creates new proposals for file operations
+- Validates member status and proposal parameters
+- Emits ProposalCreated event
 
-Key technologies used:
+2. **Voting Mechanism**
+```solidity
+function vote(uint256 proposalId, bool support) public
+```
+- Handles member votes on proposals
+- Updates vote counts and checks thresholds
+- Prevents double voting
 
-- **Ethers.js** for interacting with the Ethereum blockchain.
-- **Next.js** as the framework for the frontend.
-- **Radix UI** components for building interactive and accessible UI elements.
-- **TailwindCSS** for styling.
+3. **Proposal Execution**
+```solidity
+function executeProposal(uint256 proposalId) public
+```
+- Verifies proposal passed
+- Executes file operation
+- Updates proposal status
 
-### **Proposal Voting**:
+### **Design Choices**
 
-The DAO governance is implemented by having members vote on proposals to take actions such as uploading, deleting, or sharing files. Votes are counted in real-time, and the outcome of the vote determines whether the proposed action is executed. The smart contract enforces the rules for majority voting and ensures that only valid proposals are executed.
+1. **Storage Architecture**
+- AutoDrive for decentralized file storage
+- Encrypted file storage for security
 
-## **Setup Instructions**
+2. **Access Control**
+- Role-based permissions
+- DAO membership validation
+- Proposal-based access management
 
-To run this project locally, follow the instructions below:
+3. **Frontend Integration**
+- Server-side rendering for performance
+- Real-time updates using polling
+- Responsive design with Tailwind CSS
 
-### **1. Clone the Repository**:
+### **Technical Stack**
 
-Clone the GitHub repository to your local machine.
+- **Blockchain**: Autonomys Network
+- **Smart Contracts**: Solidity
+- **Frontend**: Next.js 13, TypeScript
+- **Storage**: AutoDrive
+- **Styling**: Tailwind CSS
+- **Contract Interaction**: ethers.js
 
+## **Quick Start**
+
+1. Clone repository:
 ```bash
 git clone https://github.com/harystyleseze/DCFR.git
-cd DCFR
 ```
 
-### **2. Install Dependencies**:
-
-Navigate to the frontend directory and install the required dependencies using npm.
-
+2. Install dependencies:
 ```bash
-cd frontend
-npm install
+cd DCFR/backend && npm install
+cd ../smart-contract && npm install
 ```
 
-### **3. Run the Development Server**:
+3. Configure environment:
+```bash
+# In /backend/.env
+NEXT_PUBLIC_AUTO_DRIVE_API_KEY=your_key
+RPC_URL=https://auto-evm-0.taurus.subspace.network/ws
+```
 
-Once dependencies are installed, you can run the development server to view the frontend locally.
-
+4. Run development server:
 ```bash
 npm run dev
 ```
 
-This will start the Next.js development server, and you can view the app at [http://localhost:3000](http://localhost:3000).
-
-### **4. Interact with the Smart Contract**:
-
-- The frontend is set up to interact with the smart contract using **Ethers.js**.
-- You’ll need a **MetaMask wallet** and connect to the autonomys testnet network.
-
-### **5. Deploying the Smart Contract**:
-
-For deployment, you will need to deploy your smart contract to a testnet. Instructions for deploying the contract can vary depending on the tools you’re using (e.g., **Hardhat**, **Truffle**). You can follow the standard instructions for deploying to your chosen testnet, and make sure to update the contract address in the frontend to point to the deployed instance.
+Visit [Documentation](./Documentation.md) for detailed setup and usage instructions.
 
 ---
 

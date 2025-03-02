@@ -276,7 +276,7 @@ export function UploadProposal() {
       </form>
 
       <Dialog open={showSuccessModal} onOpenChange={handleCloseSuccessModal}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-center">
               <div className="flex items-center justify-center gap-2">
@@ -288,35 +288,25 @@ export function UploadProposal() {
               </div>
             </DialogTitle>
             <DialogDescription>
-              <div className="mt-6 space-y-4">
+              <div className="mt-4 space-y-4">
                 <div className="rounded-lg bg-gray-50 dark:bg-gray-900 p-4 space-y-2">
-                  <p>
-                    <strong>Proposal ID:</strong>{" "}
-                    <span className="font-mono">{proposalDetails?.id}</span>
-                  </p>
-                  <p>
-                    <strong>File Name:</strong>{" "}
-                    <span className="font-mono">
-                      {proposalDetails?.fileName}
-                    </span>
-                  </p>
-                  <p>
-                    <strong>CID:</strong>{" "}
-                    <span className="font-mono text-sm">
-                      {proposalDetails?.cid}
-                    </span>
-                  </p>
-                  <p>
-                    <strong>Voting Ends:</strong>{" "}
-                    <span className="font-mono">
-                      {proposalDetails?.votingEnds}
-                    </span>
-                  </p>
+                  <div className="grid grid-cols-[auto,1fr] gap-2">
+                    <strong>Proposal ID:</strong>
+                    <span className="font-mono text-sm truncate">{proposalDetails?.id}</span>
+                    
+                    <strong>File Name:</strong>
+                    <span className="font-mono text-sm truncate">{proposalDetails?.fileName}</span>
+                    
+                    <strong>CID:</strong>
+                    <span className="font-mono text-sm truncate">{proposalDetails?.cid}</span>
+                    
+                    <strong>Voting Ends:</strong>
+                    <span className="font-mono text-sm">{proposalDetails?.votingEnds}</span>
+                  </div>
                 </div>
                 <p className="text-sm text-gray-500 text-center">
-                  Your proposal has been created and is now available for
-                  voting. You will be redirected to the home page to view all
-                  proposals.
+                  Your proposal has been created and is now available for voting.
+                  You will be redirected to the home page to view all proposals.
                 </p>
               </div>
             </DialogDescription>

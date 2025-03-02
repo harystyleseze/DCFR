@@ -15,6 +15,10 @@ import {
   Loader2,
   AlertCircle,
   History,
+  Upload,
+  Trash2,
+  Share2,
+  File,
 } from "lucide-react";
 import { Progress } from "./ui/progress";
 import { theme } from "../lib/theme";
@@ -161,6 +165,45 @@ export function ProposalList() {
       .sort((a, b) => b.id - a.id); // Sort by ID in descending order
   };
 
+  const getProposalTypeText = (type: ProposalType) => {
+    switch (type) {
+      case ProposalType.UPLOAD:
+        return "Upload";
+      case ProposalType.DELETE:
+        return "Delete";
+      case ProposalType.SHARE:
+        return "Share";
+      default:
+        return "Unknown";
+    }
+  };
+
+  const getProposalTypeColor = (type: ProposalType) => {
+    switch (type) {
+      case ProposalType.UPLOAD:
+        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
+      case ProposalType.DELETE:
+        return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
+      case ProposalType.SHARE:
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400";
+      default:
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400";
+    }
+  };
+
+  const getProposalTypeIcon = (type: ProposalType) => {
+    switch (type) {
+      case ProposalType.UPLOAD:
+        return <Upload className="h-4 w-4" />;
+      case ProposalType.DELETE:
+        return <Trash2 className="h-4 w-4" />;
+      case ProposalType.SHARE:
+        return <Share2 className="h-4 w-4" />;
+      default:
+        return <File className="h-4 w-4" />;
+    }
+  };
+
   if (!address || !isCorrectNetwork) {
     return (
       <Alert className="mb-4">
@@ -288,6 +331,15 @@ function ProposalCard({
     parseInt(proposal.votingEnd) > Math.floor(Date.now() / 1000);
   const isDelete = proposal.proposalType === ProposalType.DELETE;
 
+  const displayFileSize = () => {
+    const size = parseInt(proposal.fileSize);
+    if (size === 0) return "N/A";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(size) / Math.log(k));
+    return parseFloat((size / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  };
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow p-6 space-y-4 border border-gray-100 dark:border-gray-700">
       <div className="flex justify-between items-start">
@@ -311,10 +363,7 @@ function ProposalCard({
           File: {proposal.fileName}
         </p>
         <p className="text-sm text-gray-500">
-          Size:{" "}
-          {parseInt(proposal.fileSize) > 0
-            ? `${(parseInt(proposal.fileSize) / 1024).toFixed(2)} KB`
-            : "N/A"}
+          Size: {displayFileSize()}
         </p>
         <p className="text-sm text-gray-500">
           Proposer: {proposal.proposer.slice(0, 6)}...

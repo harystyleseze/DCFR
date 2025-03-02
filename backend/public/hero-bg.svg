@@ -1,0 +1,30 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="grid" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#F89213" stroke-width="0.5" opacity="0.2"/>
+    </pattern>
+    <linearGradient id="glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F89213;stop-opacity:0.1" />
+      <stop offset="50%" style="stop-color:#F89213;stop-opacity:0.05" />
+      <stop offset="100%" style="stop-color:#F89213;stop-opacity:0.1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1920" height="1080" fill="url(#glow)" />
+  
+  <!-- Grid Pattern -->
+  <rect width="1920" height="1080" fill="url(#grid)" />
+  
+  <!-- Decorative Elements -->
+  <circle cx="200" cy="200" r="100" fill="#F89213" fill-opacity="0.05" />
+  <circle cx="1720" cy="880" r="150" fill="#F89213" fill-opacity="0.05" />
+  
+  <!-- Abstract Shapes -->
+  <path d="M960 100 Q 1200 540 960 980 Q 720 540 960 100" 
+        stroke="#F89213" stroke-width="1" fill="none" opacity="0.1" />
+  <path d="M760 300 Q 1000 540 760 780 Q 520 540 760 300" 
+        stroke="#F89213" stroke-width="1" fill="none" opacity="0.1" />
+  <path d="M1160 300 Q 1400 540 1160 780 Q 920 540 1160 300" 
+        stroke="#F89213" stroke-width="1" fill="none" opacity="0.1" />
+</svg> 

@@ -218,11 +218,23 @@ export class ContractService {
     if (!this.contract) throw new Error("Contract not initialized");
 
     try {
+      // Get file metadata from API
+      const response = await fetch(`/api/files/metadata?cid=${cid}`);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to get file metadata");
+      }
+      const { metadata } = await response.json();
+
+      if (!metadata) {
+        throw new Error("File does not exist");
+      }
+
       const tx = await this.contract.propose(
         ProposalType.DELETE,
         cid,
         fileName,
-        0, // fileSize is 0 for delete proposals
+        metadata.totalSize || 0, // Use the actual file size from metadata
         votingPeriod
       );
       const receipt = await tx.wait();
@@ -275,6 +287,84 @@ export class ContractService {
       return true;
     } catch (error: any) {
       throw new Error(`Failed to execute delete proposal: ${error.message}`);
+    }
+  }
+
+  async createShareProposal(
+    cid: string,
+    fileName: string,
+    votingPeriod: number = 300
+  ) {
+    if (!this.contract) throw new Error("Contract not initialized");
+
+    try {
+      console.log("Creating share proposal for:", {
+        cid,
+        fileName,
+        votingPeriod,
+      });
+
+      // Get file metadata from API
+      const response = await fetch(`/api/files/metadata?cid=${cid}`);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to get file metadata");
+      }
+      const { metadata } = await response.json();
+
+      const tx = await this.contract.propose(
+        ProposalType.SHARE,
+        cid,
+        fileName,
+        metadata.totalSize || 0, // Use actual file size from metadata
+        votingPeriod
+      );
+      console.log("Transaction sent:", tx.hash);
+
+      const receipt = await tx.wait();
+      console.log("Transaction confirmed:", receipt);
+
+      // Find the FileProposed event
+      const event = receipt.logs.find(
+        (log: any) => log.fragment?.name === "FileProposed"
+      );
+
+      if (!event) {
+        throw new Error("FileProposed event not found in transaction receipt");
+      }
+
+      // Get the proposal ID from the event args
+      const proposalId = event.args[0];
+      if (!proposalId) {
+        throw new Error("Proposal ID not found in event");
+      }
+
+      return proposalId.toString();
+    } catch (error: any) {
+      console.error("Create share proposal error:", error);
+      throw new Error(
+        error.message || "Failed to create share proposal"
+      );
+    }
+  }
+
+  async handleShare(cid: string) {
+    if (!this.contract) throw new Error("Contract not initialized");
+
+    try {
+      console.log("Handling share for CID:", cid);
+
+      // Call the contract's handleShare function
+      const tx = await this.contract.handleShare(cid);
+      console.log("Transaction sent:", tx.hash);
+
+      const receipt = await tx.wait();
+      console.log("Transaction confirmed:", receipt);
+
+      return true;
+    } catch (error: any) {
+      console.error("Handle share error:", error);
+      throw new Error(error.message || "Failed to handle share");
     }
   }
 }

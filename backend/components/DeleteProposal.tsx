@@ -240,37 +240,43 @@ export function DeleteProposal({
       )}
 
       <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Delete Proposal Created</DialogTitle>
-            <DialogDescription>
-              <div className="mt-4 space-y-3">
-                <p>
-                  A proposal to delete the file has been created. DAO members
-                  will need to vote on this proposal before the file can be
-                  deleted.
-                </p>
-                <p>
-                  <strong>Proposal ID:</strong> {proposalId}
-                </p>
-                <p>
-                  <strong>File Name:</strong> {fileName}
-                </p>
-                <p>
-                  <strong>CID:</strong> {cid}
-                </p>
-                <p>
-                  <strong>Voting Period:</strong>{" "}
-                  {VOTING_PERIODS.find((p) => p.value === votingPeriod)?.label}
-                </p>
+            <DialogTitle className="text-center">
+              <div className="flex items-center justify-center gap-2">
+                <Trash2 className="h-6 w-6" style={{ color: theme.colors.primary }} />
+                <span>Delete Proposal Created</span>
               </div>
-              <div className="mt-6">
-                <Button onClick={handleCloseSuccessModal}>
-                  View Proposals
-                </Button>
+            </DialogTitle>
+            <DialogDescription>
+              <div className="mt-4 space-y-4">
+                <div className="rounded-lg bg-gray-50 dark:bg-gray-900 p-4">
+                  <div className="grid grid-cols-[auto,1fr] gap-2">
+                    <strong>Proposal ID:</strong>
+                    <span className="font-mono text-sm truncate">{proposalId}</span>
+                    
+                    <strong>File Name:</strong>
+                    <span className="font-mono text-sm truncate">{fileName}</span>
+                    
+                    <strong>CID:</strong>
+                    <span className="font-mono text-sm truncate">{cid}</span>
+                    
+                    <strong>Voting Period:</strong>
+                    <span className="font-mono text-sm">{VOTING_PERIODS.find((p) => p.value === votingPeriod)?.label}</span>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-500 text-center">
+                  A proposal to delete the file has been created. DAO members
+                  will need to vote on this proposal before the file can be deleted.
+                </p>
               </div>
             </DialogDescription>
           </DialogHeader>
+          <div className="mt-4">
+            <Button onClick={handleCloseSuccessModal} className="w-full bg-primary hover:bg-primary-hover text-white">
+              View Proposals
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </>
