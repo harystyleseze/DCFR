@@ -1,10 +1,14 @@
 # **Decentralized Collaborative File Repository (DCFR)**
 
+![DCFR Homepage](./assets/homepage.png)
+
 ## **User-Focused Summary**
 
 DCFR is a decentralized file management platform that puts control in the hands of its community through DAO governance. Every file operation - from uploads to deletions - is decided by member voting, ensuring transparent and democratic file management.
 
 **Key Features:**
+![DCFR Features](./assets/features.png)
+
 - Upload files through community-approved proposals
 - Democratic file deletion process
 - Controlled file sharing with granular access management
