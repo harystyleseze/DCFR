@@ -31,6 +31,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { DeleteProposal } from "./DeleteProposal";
+import { ShareProposal } from "./ShareProposal";
 
 interface File {
   name: string;
@@ -39,23 +49,89 @@ interface File {
   type?: string;
 }
 
-const getFileIcon = (type: string) => {
-  const baseClass = "h-16 w-16 transition-transform duration-300 group-hover:scale-110";
-  switch (type.split("/")[0]) {
-    case "application":
-      if (type.includes("pdf")) {
-        return <FileText className={`${baseClass} text-blue-500`} />;
-      }
-      return <FileArchive className={`${baseClass} text-yellow-500`} />;
-    case "image":
-      return <Image className={`${baseClass} text-green-500`} />;
-    case "video":
-      return <Film className={`${baseClass} text-red-500`} />;
-    case "audio":
-      return <Music className={`${baseClass} text-purple-500`} />;
-    default:
-      return <FileText className={`${baseClass} text-gray-500`} />;
+interface FileListProps {
+  showAll?: boolean;
+  currentPage?: number;
+  itemsPerPage?: number;
+  onPageChange?: (page: number) => void;
+  onTotalPagesChange?: (pages: number) => void;
+  onLoadingChange?: (loading: boolean) => void;
+  viewMode?: 'card' | 'table';
+}
+
+const getFileExtension = (fileName: string) => {
+  const parts = fileName.split('.');
+  return parts.length > 1 ? `.${parts[parts.length - 1].toLowerCase()}` : '';
+};
+
+const getDisplayFileType = (fileName: string, mimeType?: string) => {
+  const extension = getFileExtension(fileName);
+  if (extension) {
+    return extension.slice(1).toUpperCase(); // Remove the dot and uppercase
   }
+  if (mimeType) {
+    return mimeType.split('/')[1].toUpperCase();
+  }
+  return 'FILE';
+};
+
+const getFileIcon = (fileName: string, type: string = '') => {
+  const baseClass = "h-16 w-16 transition-transform duration-300 group-hover:scale-110";
+  const smallClass = "h-4 w-4";
+  const isSmall = type === 'small';
+  const className = isSmall ? smallClass : baseClass;
+
+  const extension = getFileExtension(fileName);
+
+  // First check common file extensions
+  switch (extension) {
+    case '.pdf':
+      return <FileText className={`${className} text-blue-500`} />;
+    case '.png':
+    case '.jpg':
+    case '.jpeg':
+    case '.gif':
+    case '.webp':
+      return <Image className={`${className} text-green-500`} />;
+    case '.mp4':
+    case '.mov':
+    case '.avi':
+    case '.mkv':
+      return <Film className={`${className} text-red-500`} />;
+    case '.mp3':
+    case '.wav':
+    case '.ogg':
+      return <Music className={`${className} text-purple-500`} />;
+    case '.zip':
+    case '.rar':
+    case '.7z':
+    case '.tar':
+    case '.gz':
+      return <FileArchive className={`${className} text-yellow-500`} />;
+  }
+
+  // Fallback to MIME type if extension is not recognized
+  if (type) {
+    const mimeType = type.split('/')[0];
+    switch (mimeType) {
+    case "image":
+        return <Image className={`${className} text-green-500`} />;
+    case "video":
+        return <Film className={`${className} text-red-500`} />;
+    case "audio":
+        return <Music className={`${className} text-purple-500`} />;
+      case "application":
+        if (type.includes("pdf")) {
+          return <FileText className={`${className} text-blue-500`} />;
+        }
+        if (type.includes("zip") || type.includes("compressed")) {
+          return <FileArchive className={`${className} text-yellow-500`} />;
+        }
+    }
+  }
+
+  // Default icon for unknown types
+  return <FileText className={`${className} text-gray-500`} />;
 };
 
 const formatFileSize = (bytes: number) => {
@@ -66,32 +142,88 @@ const formatFileSize = (bytes: number) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 };
 
-export function FileList() {
+export function FileList({
+  showAll = false,
+  currentPage = 1,
+  itemsPerPage = 10,
+  onPageChange,
+  onTotalPagesChange,
+  onLoadingChange,
+  viewMode = 'card'
+}: FileListProps) {
   const [files, setFiles] = useState<File[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const { address, isCorrectNetwork } = useWallet();
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchFiles = async () => {
+      if (!address || !isCorrectNetwork) return;
+      
       try {
-        const response = await fetch("/api/files");
-        if (!response.ok) {
-          throw new Error("Failed to fetch files");
-        }
+        setLoading(true);
+        onLoadingChange?.(true);
+
+        const limit = showAll ? itemsPerPage : 5;
+        const response = await fetch(`/api/files?page=${currentPage}&limit=${limit}`);
+        
+        if (!isMounted) return;
+        
         const data = await response.json();
-        setFiles(data.files);
-      } catch (error: any) {
+
+        if (data.error) {
+          throw new Error(data.error);
+        }
+
+        setFiles(data.files || []);
+
+        if (onTotalPagesChange) {
+          onTotalPagesChange(data.totalPages || 1);
+        }
+      } catch (error) {
         console.error("Error fetching files:", error);
-        toast.error("Error", {
-          description: error.message || "Failed to fetch files",
-        });
+        if (isMounted) {
+          toast.error("Error", {
+            description: "Failed to fetch files. Please try again."
+          });
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+          onLoadingChange?.(false);
+        }
       }
     };
 
     fetchFiles();
-  }, []);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentPage, itemsPerPage, showAll, address, isCorrectNetwork, onTotalPagesChange, onLoadingChange]);
+
+  const handleDownload = async (cid: string) => {
+    try {
+      window.open(`/api/files/download?cid=${cid}`, '_blank');
+    } catch (error: any) {
+      console.error('Error downloading file:', error);
+      toast.error('Error', {
+        description: error.message || 'Failed to download file'
+      });
+    }
+  };
+
+  const handlePreview = async (cid: string) => {
+    try {
+      window.open(`/api/files/preview?cid=${cid}`, '_blank');
+    } catch (error: any) {
+      console.error('Error previewing file:', error);
+      toast.error('Error', {
+        description: error.message || 'Failed to preview file'
+      });
+    }
+  };
 
   if (!address || !isCorrectNetwork) {
     return (
@@ -104,12 +236,12 @@ export function FileList() {
     );
   }
 
-  if (loading) {
+  if (loading && !files.length) {
     return (
-      <div className="flex items-center justify-center py-24">
+      <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <Loader2
-            className="h-12 w-12 animate-spin mb-4 mx-auto"
+            className="h-8 w-8 animate-spin mb-4 mx-auto"
             style={{ color: theme.colors.primary }}
           />
           <p className="text-gray-500 dark:text-gray-400 animate-pulse">
@@ -120,19 +252,83 @@ export function FileList() {
     );
   }
 
-  if (!files.length) {
+  if (!loading && !files.length) {
     return (
-      <div className="text-center py-24 px-4">
+      <div className="text-center py-12">
         <FileText
-          className="h-20 w-20 mx-auto mb-6 opacity-80"
+          className="h-16 w-16 mx-auto mb-4 opacity-80"
           style={{ color: theme.colors.primary }}
         />
-        <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100">
+        <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">
           No Files Found
         </h3>
         <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
           Start by uploading your first file to the decentralized repository.
         </p>
+      </div>
+    );
+  }
+
+  if (viewMode === 'table') {
+    return (
+      <div className="relative">
+        {loading && (
+          <div className="absolute inset-0 bg-white/50 dark:bg-gray-900/50 flex items-center justify-center backdrop-blur-sm z-10">
+            <Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.colors.primary }} />
+          </div>
+        )}
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Size</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {files.map((file) => (
+                <TableRow key={file.cid}>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      {getFileIcon(file.name, 'small')}
+                      <span className="truncate max-w-[200px]">{file.name}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>{formatFileSize(file.size)}</TableCell>
+                  <TableCell>{getDisplayFileType(file.name, file.type)}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePreview(file.cid)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDownload(file.cid)}
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                      <DeleteProposal
+                        cid={file.cid}
+                        fileName={file.name}
+                      />
+                      <ShareProposal
+                        cid={file.cid}
+                        fileName={file.name}
+                      />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     );
   }
@@ -149,8 +345,8 @@ export function FileList() {
           <CardHeader className="pb-4 relative">
             <div className="flex flex-col items-center text-center gap-4">
               <div className="rounded-full p-6 bg-gray-50 dark:bg-gray-800 ring-1 ring-gray-100 dark:ring-gray-700 group-hover:ring-primary/20 dark:group-hover:ring-primary/20 transition-all duration-300">
-                {getFileIcon(file.type || "application/octet-stream")}
-              </div>
+                {getFileIcon(file.name, file.type)}
+                </div>
               <div className="space-y-2">
                 <h3 className="font-semibold text-lg leading-tight group-hover:text-primary transition-colors duration-300 line-clamp-2">
                   {file.name}
@@ -166,7 +362,7 @@ export function FileList() {
                   color: theme.colors.primary,
                 }}
               >
-                {file.type?.split("/")[1] || "file"}
+                {getDisplayFileType(file.name, file.type)}
               </Badge>
             </div>
           </CardHeader>
@@ -191,31 +387,7 @@ export function FileList() {
               variant="outline"
               size="sm"
               className="w-full transition-all duration-300 hover:scale-105 hover:shadow-md hover:text-primary hover:border-primary dark:hover:bg-gray-800"
-              onClick={async () => {
-                try {
-                  const response = await fetch(`/api/files/download?cid=${file.cid}`);
-                  if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || 'Failed to download file');
-                  }
-                  
-                  const blob = await response.blob();
-                  const url = window.URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = file.name;
-                  document.body.appendChild(a);
-                  a.click();
-                  
-                  window.URL.revokeObjectURL(url);
-                  document.body.removeChild(a);
-                } catch (error: any) {
-                  console.error('Error downloading file:', error);
-                  toast.error('Error', {
-                    description: error.message || 'Failed to download file'
-                  });
-                }
-              }}
+              onClick={() => handleDownload(file.cid)}
             >
               <Download className="mr-2 h-4 w-4" />
               Download
@@ -224,17 +396,7 @@ export function FileList() {
               variant="outline"
               size="sm"
               className="w-full transition-all duration-300 hover:scale-105 hover:shadow-md hover:text-primary hover:border-primary dark:hover:bg-gray-800"
-              onClick={async () => {
-                try {
-                  const previewUrl = `/api/files/preview?cid=${file.cid}`;
-                  window.open(previewUrl, '_blank');
-                } catch (error: any) {
-                  console.error('Error previewing file:', error);
-                  toast.error('Error', {
-                    description: error.message || 'Failed to preview file'
-                  });
-                }
-              }}
+              onClick={() => handlePreview(file.cid)}
             >
               <Eye className="mr-2 h-4 w-4" />
               Preview

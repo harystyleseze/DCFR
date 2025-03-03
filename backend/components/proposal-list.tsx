@@ -26,7 +26,7 @@ import { Alert, AlertDescription } from "./ui/alert";
 import { DeleteProposal } from "./DeleteProposal";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 
-interface Proposal {
+export interface Proposal {
   id: number;
   proposalType: ProposalType;
   cid: string;
@@ -40,14 +40,17 @@ interface Proposal {
   votingPeriod: string;
 }
 
-export function ProposalList() {
-  const [proposals, setProposals] = useState<Proposal[]>([]);
-  const [loading, setLoading] = useState(true);
+export interface ProposalListProps {
+  proposals: Proposal[];
+  type: 'delete' | 'share' | 'upload';
+  status: 'active' | 'executed';
+}
+
+export function ProposalList({ proposals, type, status }: ProposalListProps) {
+  const [loading, setLoading] = useState(false);
   const [isMember, setIsMember] = useState(false);
   const { address, isCorrectNetwork } = useWallet();
-  const [votingStates, setVotingStates] = useState<{ [key: number]: boolean }>(
-    {}
-  );
+  const [votingStates, setVotingStates] = useState<{ [key: number]: boolean }>({});
   const [activeTab, setActiveTab] = useState("active");
 
   useEffect(() => {
@@ -72,39 +75,6 @@ export function ProposalList() {
     checkMemberStatus();
   }, [address, isCorrectNetwork]);
 
-  const fetchProposals = async () => {
-    if (!window.ethereum) return;
-
-    try {
-      const provider = new BrowserProvider(window.ethereum);
-      const contractService = new ContractService();
-      await contractService.initialize(provider);
-
-      const proposalCount = await contractService.proposalCount();
-      const proposalPromises = [];
-
-      for (let i = 1; i <= proposalCount; i++) {
-        proposalPromises.push(contractService.getProposal(i));
-      }
-
-      const fetchedProposals = await Promise.all(proposalPromises);
-      const allProposals = fetchedProposals.map((p, i) => ({
-        ...p,
-        id: i + 1,
-      }));
-      setProposals(allProposals);
-    } catch (error) {
-      console.error("Error fetching proposals:", error);
-      toast.error("Failed to fetch proposals");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchProposals();
-  }, [address, isCorrectNetwork]);
-
   const handleVote = async (proposalId: number, support: boolean) => {
     if (!address || !isCorrectNetwork || !window.ethereum) {
       toast.error("Please connect your wallet");
@@ -125,8 +95,8 @@ export function ProposalList() {
       setVotingStates({ ...votingStates, [proposalId]: true });
       toast.success("Vote cast successfully!");
 
-      // Refresh proposals after voting
-      await fetchProposals();
+      // Refresh page after voting
+      window.location.reload();
     } catch (error: any) {
       console.error("Error voting:", error);
       toast.error(error.message || "Failed to cast vote");
@@ -272,7 +242,6 @@ export function ProposalList() {
                   proposal={proposal}
                   onVote={handleVote}
                   votingStates={votingStates}
-                  onRefresh={fetchProposals}
                   formatTimeLeft={formatTimeLeft}
                 />
               ))}
@@ -287,14 +256,13 @@ export function ProposalList() {
               <p className="text-gray-500">No historical proposals</p>
             </div>
           ) : (
-            <div className="space-y-4">
+    <div className="space-y-4">
               {filteredProposals.map((proposal) => (
                 <ProposalCard
                   key={proposal.id}
                   proposal={proposal}
                   onVote={handleVote}
                   votingStates={votingStates}
-                  onRefresh={fetchProposals}
                   formatTimeLeft={formatTimeLeft}
                 />
               ))}
@@ -310,7 +278,6 @@ interface ProposalCardProps {
   proposal: Proposal;
   onVote: (proposalId: number, support: boolean) => Promise<void>;
   votingStates: { [key: number]: boolean };
-  onRefresh: () => void;
   formatTimeLeft: (votingEnd: string) => string;
 }
 
@@ -318,7 +285,6 @@ function ProposalCard({
   proposal,
   onVote,
   votingStates,
-  onRefresh,
   formatTimeLeft,
 }: ProposalCardProps) {
   const totalVotes = parseInt(proposal.yesVotes) + parseInt(proposal.noVotes);
@@ -428,7 +394,6 @@ function ProposalCard({
               <DeleteProposal
                 cid={proposal.cid}
                 fileName={proposal.fileName}
-                onDelete={onRefresh}
                 proposalId={proposal.id.toString()}
                 isExecutable={true}
               />

@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { createAutoDriveApi, apiCalls, Scope } from "@autonomys/auto-drive";
-import { ContractService } from "@/lib/contract";
+import { ContractService, ProposalType } from "@/lib/contract";
 import { JsonRpcProvider } from "ethers";
 import { config } from "@/lib/config";
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET() {
   try {
@@ -26,16 +29,24 @@ export async function GET() {
       return !votingEnded && !p.executed;
     }).length;
 
+    // Get deleted files count
+    const deletedCids = proposals
+      .filter((p) => p.proposalType === ProposalType.DELETE && p.executed)
+      .map((p) => p.cid);
+
     // Get files managed count
     const autoDrive = createAutoDriveApi({
       apiKey: process.env.NEXT_PUBLIC_AUTO_DRIVE_API_KEY || "",
       network: "taurus",
     });
-    const { totalCount: filesManaged } = await apiCalls.getRoots(autoDrive, {
+    const { totalCount } = await apiCalls.getRoots(autoDrive, {
       scope: Scope.User,
       limit: 1,
       offset: 0,
     });
+
+    // Adjust files managed count by subtracting deleted files
+    const filesManaged = totalCount - deletedCids.length;
 
     // Get DAO members count
     let daoMembers = 0;
@@ -45,11 +56,16 @@ export async function GET() {
       console.error("Error fetching member count:", error);
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       activeProposals,
       filesManaged,
       daoMembers,
     });
+
+    // Set cache control headers
+    response.headers.set('Cache-Control', 'no-store, max-age=0');
+
+    return response;
   } catch (error: any) {
     console.error("Error fetching stats:", error);
     return NextResponse.json(

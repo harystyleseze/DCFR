@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
-import { AutoDriveService } from "@/lib/autoDrive";
+import { createAutoDriveApi, apiCalls, Scope } from "@autonomys/auto-drive";
 import { ContractService, ProposalType } from "@/lib/contract";
 import { JsonRpcProvider } from "ethers";
 import { config } from "@/lib/config";
 
-export async function GET() {
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
+export async function GET(req: Request) {
   try {
     if (!process.env.NEXT_PUBLIC_AUTO_DRIVE_API_KEY) {
       return NextResponse.json(
@@ -13,13 +16,43 @@ export async function GET() {
       );
     }
 
-    // Initialize AutoDrive
-    const autoDrive = new AutoDriveService(
-      process.env.NEXT_PUBLIC_AUTO_DRIVE_API_KEY
-    );
+    // Get pagination parameters from URL
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "10");
+    const offset = (page - 1) * limit;
 
-    // Get all files
-    const { files } = await autoDrive.getFiles();
+    // Initialize AutoDrive
+    const autoDrive = createAutoDriveApi({
+      apiKey: process.env.NEXT_PUBLIC_AUTO_DRIVE_API_KEY || "",
+      network: "taurus",
+    });
+
+    // Get files for the current page
+    const { rows: files, totalCount } = await apiCalls.getRoots(autoDrive, {
+      scope: Scope.User,
+      limit,
+      offset
+    });
+
+    console.log('Total files from getRoots:', totalCount);
+    console.log('Files array length:', files.length);
+
+    // Get metadata for each file
+    const fileMetadataPromises = files.map(async (file) => {
+      try {
+        const objectInfo = await apiCalls.getObject(autoDrive, { cid: file.headCid });
+        return {
+          ...file,
+          type: objectInfo.metadata.type || 'application/octet-stream'
+        };
+      } catch (error) {
+        console.error(`Error fetching metadata for file ${file.headCid}:`, error);
+        return file;
+      }
+    });
+
+    const filesWithMetadata = await Promise.all(fileMetadataPromises);
 
     // Get list of deleted files from the contract
     const provider = new JsonRpcProvider(config.contract.network.rpcUrl);
@@ -39,25 +72,24 @@ export async function GET() {
       .map((p) => p.cid);
 
     // Filter out deleted files
-    const activeFiles = files.filter((file) => !deletedCids.includes(file.cid));
+    const activeFiles = filesWithMetadata
+      .filter((file) => !deletedCids.includes(file.headCid))
+      .map((file) => ({
+        name: file.name,
+        cid: file.headCid,
+        size: file.size,
+        type: file.type || 'application/octet-stream',
+      }));
 
-    // Get metadata for each file
-    const filesWithMetadata = await Promise.all(
-      activeFiles.map(async (file) => {
-        try {
-          const metadata = await autoDrive.getFileMetadata(file.cid);
-          return {
-            ...file,
-            type: metadata.type,
-          };
-        } catch (error) {
-          console.error(`Error getting metadata for file ${file.cid}:`, error);
-          return file;
-        }
-      })
-    );
+    // Calculate the actual total count excluding deleted files
+    const actualTotalCount = totalCount - deletedCids.length;
 
-    return NextResponse.json({ files: filesWithMetadata });
+    return NextResponse.json({
+      files: activeFiles,
+      totalCount: actualTotalCount,
+      currentPage: page,
+      totalPages: Math.ceil(actualTotalCount / limit)
+    });
   } catch (error: any) {
     console.error("Error fetching files:", error);
     return NextResponse.json(

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useWallet } from "@/hooks/useWallet";
 import { useToast } from "@/components/ui/use-toast";
@@ -67,11 +67,31 @@ export function DeleteProposal({
     initialProposalId
   );
   const [votingPeriod, setVotingPeriod] = useState("300"); // 5 minutes default
+  const [canExecute, setCanExecute] = useState(false);
 
   const { toast } = useToast();
   const { address, isConnected } = useWallet();
   const { isCorrectNetwork } = useNetwork();
   const { isMember } = useMembership(address);
+
+  useEffect(() => {
+    const checkExecutable = async () => {
+      if (!proposalId || !isExecutable || !window.ethereum) return;
+      
+      try {
+        const provider = new BrowserProvider(window.ethereum as any);
+        const contractService = new ContractService();
+        await contractService.initialize(provider);
+        const isPassed = await contractService.isProposalPassed(Number(proposalId));
+        setCanExecute(isPassed);
+      } catch (error) {
+        console.error("Error checking if proposal can be executed:", error);
+        setCanExecute(false);
+      }
+    };
+
+    checkExecutable();
+  }, [proposalId, isExecutable]);
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -123,6 +143,30 @@ export function DeleteProposal({
 
     try {
       setIsExecuting(true);
+
+      // First check if the file still exists
+      try {
+        const response = await fetch(`/api/files/metadata?cid=${cid}`);
+        const data = await response.json();
+        
+        if (response.status === 404 || (data.error && data.error.includes("not found"))) {
+          toast({
+            title: "Error",
+            description: "This file no longer exists. It may have been deleted already.",
+            variant: "destructive",
+          });
+          return;
+        }
+      } catch (error) {
+        console.error("Error checking file existence:", error);
+        toast({
+          title: "Error",
+          description: "Unable to verify file existence. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const provider = new BrowserProvider(window.ethereum);
       const contract = new ContractService();
       await contract.initialize(provider);
@@ -130,11 +174,28 @@ export function DeleteProposal({
       // Check if proposal has passed
       const isPassed = await contract.isProposalPassed(parseInt(proposalId));
       if (!isPassed) {
-        throw new Error("Proposal has not passed");
+        toast({
+          title: "Error",
+          description: "This proposal has not passed and cannot be executed.",
+          variant: "destructive",
+        });
+        return;
       }
 
       // Execute the proposal on the contract
-      await contract.executeProposal(parseInt(proposalId));
+      try {
+        await contract.executeProposal(parseInt(proposalId));
+      } catch (error: any) {
+        if (error.message?.includes("File does not exist")) {
+          toast({
+            title: "Error",
+            description: "This file has already been deleted.",
+            variant: "destructive",
+          });
+          return;
+        }
+        throw error;
+      }
 
       // Delete the file through the API route
       const response = await fetch("/api/autoDrive/delete", {
@@ -200,43 +261,26 @@ export function DeleteProposal({
 
   return (
     <>
-      {isExecutable ? (
+      {!proposalId && !isExecutable && (
         <Button
+          onClick={() => handleDelete()}
+          disabled={isDeleting}
+          className="w-full flex items-center justify-center gap-2"
           variant="destructive"
+        >
+          <Trash2 className="h-4 w-4" />
+          {isDeleting ? "Creating Proposal..." : "Create Delete Proposal"}
+        </Button>
+      )}
+
+      {isExecutable && canExecute && (
+        <Button
           onClick={handleExecuteDelete}
           disabled={isDeleting}
           className="w-full"
         >
-          <Trash2 className="mr-2 h-4 w-4" />
-          Execute Delete
+          {isDeleting ? "Executing..." : "Execute Delete"}
         </Button>
-      ) : (
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Voting Period</label>
-            <Select value={votingPeriod} onValueChange={setVotingPeriod}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select voting period" />
-              </SelectTrigger>
-              <SelectContent>
-                {VOTING_PERIODS.map((period) => (
-                  <SelectItem key={period.value} value={period.value}>
-                    {period.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <Button
-            variant="destructive"
-            onClick={handleDelete}
-            disabled={isDeleting}
-            className="w-full"
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            {isDeleting ? "Creating Proposal..." : "Delete File"}
-          </Button>
-        </div>
       )}
 
       <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>

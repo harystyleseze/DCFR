@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { AutoDriveService } from "@/lib/autoDrive";
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function GET(req: Request) {
   try {
     if (!process.env.NEXT_PUBLIC_AUTO_DRIVE_API_KEY) {

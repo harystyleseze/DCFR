@@ -4,6 +4,9 @@ import { ContractService, ProposalType } from "../../../../lib/contract";
 import { JsonRpcProvider } from "ethers";
 import { config } from "../../../../lib/config";
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function GET(req: Request) {
   try {
     if (!process.env.NEXT_PUBLIC_AUTO_DRIVE_API_KEY) {

@@ -111,7 +111,7 @@ export default function DeletePage() {
       <h1 className="text-3xl font-bold mb-8">Create Delete Proposal</h1>
       <div className="max-w-xl mx-auto">
         <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md">
-          <div className="mb-6">
+      <div className="mb-6">
             <label className="block text-sm font-medium mb-2">
               Search File
             </label>
@@ -129,7 +129,7 @@ export default function DeletePage() {
                 </div>
               )}
             </div>
-          </div>
+      </div>
 
           {searchResults.length > 0 && (
             <div className="space-y-4">

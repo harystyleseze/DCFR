@@ -9,6 +9,17 @@ import { Menu, X } from "lucide-react";
 import { WalletConnect } from "./WalletConnect";
 import { FaucetButton } from "./FaucetButton";
 
+const navigation = [
+  { name: "Home", href: "/" },
+  { name: "Proposals", href: "/proposals" },
+  { name: "Managed Files", href: "/managed" },
+  { name: "Upload", href: "/proposals/upload" },
+  { name: "Upload Folder", href: "/proposals/upload-folder" },
+  { name: "Deleted Files", href: "/proposals/delete" },
+  { name: "Shared Files", href: "/proposals/share" },
+  { name: "Admin", href: "/admin" },
+];
+
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 

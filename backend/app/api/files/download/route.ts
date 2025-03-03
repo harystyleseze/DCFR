@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { AutoDriveService } from "@/lib/autoDrive";
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function GET(req: Request) {
   try {
     if (!process.env.NEXT_PUBLIC_AUTO_DRIVE_API_KEY) {
@@ -23,27 +26,22 @@ export async function GET(req: Request) {
 
     const stream = await autoDrive.downloadFile(cid);
     const metadata = await autoDrive.getFileMetadata(cid);
+
+    // Collect all chunks into a single buffer
+    const chunks = [];
+    for await (const chunk of stream) {
+      chunks.push(chunk);
+    }
+    const buffer = Buffer.concat(chunks);
     
-    // Convert AsyncIterable<Buffer> to ReadableStream
-    const readableStream = new ReadableStream({
-      async start(controller) {
-        try {
-          for await (const chunk of stream) {
-            controller.enqueue(chunk);
-          }
-          controller.close();
-        } catch (error) {
-          controller.error(error);
-        }
-      }
-    });
-    
-    // Create response from the readable stream
-    const response = new Response(readableStream);
+    // Create response with the buffer
+    const response = new NextResponse(buffer);
     
     // Set appropriate headers
     response.headers.set("Content-Type", metadata.type || "application/octet-stream");
     response.headers.set("Content-Disposition", `attachment; filename="${metadata.name}"`);
+    response.headers.set("Content-Length", buffer.length.toString());
+    response.headers.set("Cache-Control", "no-store, max-age=0");
 
     return response;
   } catch (error: any) {

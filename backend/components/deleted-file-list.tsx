@@ -11,6 +11,8 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { toast } from "sonner";
+import { shortenAddress } from "@/lib/utils";
+import { DeleteProposal as DeleteProposalComponent } from "./DeleteProposal";
 
 interface DeleteProposal {
   id: number;
@@ -41,6 +43,7 @@ export function DeletedFileList() {
   const [refreshing, setRefreshing] = useState(false);
   const { address, isCorrectNetwork } = useWallet();
   const [activeTab, setActiveTab] = useState("active");
+  const [fileExists, setFileExists] = useState<{[key: string]: boolean}>({});
 
   const fetchDeleteProposals = useCallback(async () => {
     if (!address || !isCorrectNetwork) {
@@ -129,6 +132,26 @@ export function DeletedFileList() {
     return `${hours}h ${minutes}m left`;
   };
 
+  useEffect(() => {
+    const checkFileExistence = async () => {
+      const existenceMap: {[key: string]: boolean} = {};
+      for (const proposal of deleteProposals) {
+        try {
+          const response = await fetch(`/api/files/metadata?cid=${proposal.cid}`);
+          existenceMap[proposal.cid] = response.ok;
+        } catch (error) {
+          console.error(`Error checking file existence for ${proposal.cid}:`, error);
+          existenceMap[proposal.cid] = false;
+        }
+      }
+      setFileExists(existenceMap);
+    };
+
+    if (deleteProposals.length > 0) {
+      checkFileExistence();
+    }
+  }, [deleteProposals]);
+
   if (!address || !isCorrectNetwork) {
     return (
       <Alert>
@@ -163,36 +186,43 @@ export function DeletedFileList() {
     <div className="space-y-4">
       {proposals.map((proposal) => (
         <div
-          key={`${proposal.id}-${proposal.cid}`}
-          className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 space-y-2 border border-gray-100 dark:border-gray-700"
+          key={proposal.id}
+          className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow"
         >
-          <div className="flex justify-between items-start">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <h3 className="text-lg font-semibold">{proposal.fileName}</h3>
-                <Badge variant={proposal.executed ? "default" : "secondary"}>
-                  {proposal.executed ? "Executed" : formatTimeLeft(proposal.votingEnd)}
-                </Badge>
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold mb-2">{proposal.fileName}</h3>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-gray-500 dark:text-gray-400">File Size</p>
+                <p>{formatFileSize(proposal.fileSize)}</p>
               </div>
-              <p className="text-sm text-gray-500">Size: {formatFileSize(proposal.fileSize)}</p>
-              <p className="text-sm text-gray-500">
-                Proposer: {proposal.proposer.slice(0, 6)}...{proposal.proposer.slice(-4)}
-              </p>
-              <p className="text-sm text-gray-500 font-mono mt-2">
-                CID: {proposal.cid}
-              </p>
-              <div className="flex gap-4 mt-2">
-                <div className="flex items-center gap-1">
-                  <Check className="h-4 w-4 text-green-500" />
-                  <span className="text-sm">{proposal.yesVotes}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <X className="h-4 w-4 text-red-500" />
-                  <span className="text-sm">{proposal.noVotes}</span>
-                </div>
+              <div>
+                <p className="text-gray-500 dark:text-gray-400">Proposer</p>
+                <p className="font-mono">{shortenAddress(proposal.proposer)}</p>
               </div>
+              <div>
+                <p className="text-gray-500 dark:text-gray-400">Yes Votes</p>
+                <p>{proposal.yesVotes}</p>
+              </div>
+              <div>
+                <p className="text-gray-500 dark:text-gray-400">No Votes</p>
+                <p>{proposal.noVotes}</p>
+              </div>
+              {!proposal.executed && (
+                <div className="col-span-2">
+                  <p className="text-gray-500 dark:text-gray-400">Time Left</p>
+                  <p>{formatTimeLeft(proposal.votingEnd)}</p>
+                </div>
+              )}
             </div>
           </div>
+          <DeleteProposalComponent
+            cid={proposal.cid}
+            fileName={proposal.fileName}
+            proposalId={proposal.id.toString()}
+            isExecutable={!proposal.executed && fileExists[proposal.cid]}
+            onDelete={handleRefresh}
+          />
         </div>
       ))}
     </div>

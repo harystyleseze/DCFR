@@ -3,17 +3,16 @@ import { createAutoDriveApi } from "@autonomys/auto-drive";
 import { ContractService } from "../../../lib/contract";
 import { BrowserProvider } from "ethers";
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const maxDuration = 300;
+export const preferredRegion = 'auto';
+
 // Initialize AutoDrive with API key
 const autoDrive = createAutoDriveApi({
   apiKey: process.env.NEXT_PUBLIC_AUTO_DRIVE_API_KEY || "",
   network: "taurus",
 });
-
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
 
 export async function POST(req: Request) {
   try {
