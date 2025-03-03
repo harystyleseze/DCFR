@@ -59,7 +59,7 @@ smart-contract/
 
 ### Backend Setup
 
-1. Navigate to the backend directory:
+1. Navigate to the backend directory after deploying the smart contracts:
    ```bash
    cd backend
    ```
@@ -71,9 +71,9 @@ smart-contract/
 
 3. Create a `.env` file with the following variables:
    ```
-   PRIVATE_KEY=your_private_key
-   RPC_URL=https://auto-evm-0.taurus.subspace.network/ws
+   NEXT_PUBLIC_CHAIN_ID=your_chain_id
    NEXT_PUBLIC_AUTO_DRIVE_API_KEY=your_autodrive_api_key
+   NEXT_PUBLIC_CONTRACT_ADDRESS=your_contract_address
    ```
 
 4. Run the development server:
@@ -93,13 +93,13 @@ smart-contract/
    npm install
    ```
 
-3. Create a `.env` file with:
+3. Create a `.env` similar to the `.env.example` file with:
    ```
    PRIVATE_KEY=your_private_key
    RPC_URL=https://auto-evm-0.taurus.subspace.network/ws
    ```
 
-4. Deploy contracts:
+4. Deploy contracts and save the contract addresses in the backend `.env` file:
    ```bash
    npx hardhat run scripts/deploy.js --network autonomys
    ```
